@@ -2,41 +2,41 @@ import xmlrpc from 'xmlrpc'
 
 export async function POST(request) {
   const body = await request.json()
-  
-  // 1. Identify Main Name and Construct Description
-  let mainName = ''
-  let descriptionText = ''
 
-  if (body.applierType === 'sme') {
-    mainName = body.company_name // Title of the Lead
-    descriptionText = `
-    === SME APPLICATION ===
-    Company Type: ${body.company_type}
-    NTN No: ${body.ntn_no}
-    `
-  } else {
-    mainName = body.retailer_name // Title of the Lead
-    descriptionText = `
-    === RETAILER APPLICATION ===
-    CNIC No: ${body.cnic_no}
-    `
+  // --- MAPPING LOGIC ---
+  // We construct the "vals" dictionary that Odoo expects
+  const leadVals = {
+    // Standard Fields
+    'type': 'lead', // Create as Lead
+    'name': `${body.applier_type.toUpperCase()} Request: ${body.loan_type}`, // Title
+    'contact_name': body.contact_person,
+    'phone': body.contact_number,
+    'street': body.address,
+
+    // Custom Fields (Keys must match Python model exactly)
+    'applier_type': body.applier_type,
+    'has_account': body.has_account, // 'yes' or 'no'
+    'loan_type': body.loan_type,     // 'car', 'personal', 'others'
   }
 
-  // Add shared details to description
-  descriptionText += `
-  ---------------------------
-  Already Has Account: ${body.has_account}
-  Loan Type Requested: ${body.loan_type}
-  Address: ${body.address}
-  `
+  // Conditional Fields
+  if (body.applier_type === 'sme') {
+    leadVals['partner_name'] = body.company_name; // Company Name
+    leadVals['company_type'] = body.company_type; // 'private', 'proprietor', etc
+    leadVals['ntn_no'] = body.ntn_no;
+  } else {
+    // For retailer, we might want the name in the title or contact_name
+    // But since contact_person is separate, we assume:
+    leadVals['contact_name'] = body.retailer_name; // Or keep body.contact_person
+    leadVals['cnic_no'] = body.cnic_no;
+  }
 
-  // 2. Setup Odoo Config
+  // --- ODOO CONNECTION ---
   const url = process.env.ODOO_URL
   const db = process.env.ODOO_DB
   const username = process.env.ODOO_EMAIL
   const password = process.env.ODOO_API_KEY
 
-  // 3. Authenticate and Push to Odoo
   const common = xmlrpc.createSecureClient({ url: `${url}/xmlrpc/2/common` })
   const models = xmlrpc.createSecureClient({ url: `${url}/xmlrpc/2/object` })
 
@@ -48,30 +48,19 @@ export async function POST(request) {
       })
     })
 
-    const leadId = await new Promise((resolve, reject) => {
+    const newLeadId = await new Promise((resolve, reject) => {
       models.methodCall('execute_kw', [
         db, uid, password,
         'crm.lead', 'create',
-        [{
-          // Mapping Form Data to Odoo Fields
-          'name': `${mainName} - ${body.loan_type} Request`, // Lead Title
-          'contact_name': body.contact_person,                // Contact Person Name
-          'partner_name': body.applierType === 'sme' ? body.company_name : '', // Company Name (if SME)
-          'phone': body.contact_number,                       // Phone Number
-          'street': body.address,                             // Address field in Odoo
-          'description': descriptionText,                     // The formatted notes
-          'type': 'lead',                                     // Create as a Lead (not Opportunity yet)
-          'tag_ids': []                                       // Optional: Add tags IDs if known
-        }]
+        [leadVals]
       ], (err, val) => {
         if (err) reject(err)
         else resolve(val)
       })
     })
 
-    return Response.json({ success: true, lead_id: leadId })
+    return Response.json({ success: true, id: newLeadId })
   } catch (error) {
-    console.error(error)
-    return Response.json({ success: false, error: error.message }, { status: 500 })
+    return Response.json({ error: error.message }, { status: 500 })
   }
 }

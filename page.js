@@ -1,146 +1,86 @@
 'use client'
 import { useState } from 'react'
 
-export default function LeadForm() {
+export default function LoanForm() {
   const [status, setStatus] = useState('idle')
-  const [applierType, setApplierType] = useState('sme') // Default to SME
+  const [type, setType] = useState('sme') // 'sme' or 'retailer'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setStatus('loading')
-
-    // Collect Form Data
     const formData = new FormData(e.target)
     const data = Object.fromEntries(formData.entries())
 
-    // Send to our internal API
-    const res = await fetch('/api/submit-lead', {
+    const res = await fetch('/api/create-lead', {
       method: 'POST',
-      body: JSON.stringify({ ...data, applierType }),
-      headers: { 'Content-Type': 'application/json' }
+      body: JSON.stringify({ ...data, applier_type: type }),
     })
 
     if (res.ok) setStatus('success')
     else setStatus('error')
   }
 
-  if (status === 'success') return (
-    <div className="flex h-screen items-center justify-center bg-green-50">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-green-600">Request Received!</h1>
-        <p className="mt-2 text-gray-600">Our team will contact you shortly.</p>
-        <button onClick={() => window.location.reload()} className="mt-4 text-blue-500 underline">Submit another</button>
-      </div>
-    </div>
-  )
+  if (status === 'success') return <div className="p-10 text-center text-green-600 text-2xl">Application Received!</div>
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
-        
-        {/* Header */}
-        <div className="bg-blue-900 p-6 text-white">
-          <h2 className="text-2xl font-bold">Loan Application</h2>
-          <p className="opacity-80">Please fill in your details below</p>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-lg w-full max-w-lg space-y-4">
+        <h1 className="text-2xl font-bold mb-4">Loan Application</h1>
+
+        {/* 1. Applier Type */}
+        <div className="flex gap-4 mb-4">
+          <button type="button" onClick={() => setType('sme')} 
+            className={`flex-1 p-2 border rounded ${type === 'sme' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+            SME Company
+          </button>
+          <button type="button" onClick={() => setType('retailer')} 
+            className={`flex-1 p-2 border rounded ${type === 'retailer' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+            Retailer
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          
-          {/* 1. Applier Type Toggle */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">I am apply as a:</label>
-            <div className="flex space-x-4">
-              <label className={`flex-1 text-center p-3 border rounded cursor-pointer ${applierType === 'sme' ? 'bg-blue-100 border-blue-500 font-bold' : 'bg-gray-50'}`}>
-                <input type="radio" name="type_selector" className="hidden" onClick={() => setApplierType('sme')} />
-                🏢 SME Company
-              </label>
-              <label className={`flex-1 text-center p-3 border rounded cursor-pointer ${applierType === 'retailer' ? 'bg-blue-100 border-blue-500 font-bold' : 'bg-gray-50'}`}>
-                <input type="radio" name="type_selector" className="hidden" onClick={() => setApplierType('retailer')} />
-                👤 Retailer
-              </label>
-            </div>
-          </div>
+        {/* 2. Dynamic Fields */}
+        {type === 'sme' ? (
+          <>
+            <input name="company_name" placeholder="Company Name" required className="w-full p-2 border rounded"/>
+            <select name="company_type" className="w-full p-2 border rounded">
+              <option value="private">Private Ltd</option>
+              <option value="proprietor">Sole Proprietor</option>
+              <option value="partnership">Partnership</option>
+            </select>
+            <input name="ntn_no" placeholder="NTN No" required className="w-full p-2 border rounded"/>
+          </>
+        ) : (
+          <>
+            <input name="retailer_name" placeholder="Retailer Name" required className="w-full p-2 border rounded"/>
+            <input name="cnic_no" placeholder="CNIC (00000-0000000-0)" required className="w-full p-2 border rounded"/>
+          </>
+        )}
 
-          {/* 2. SME Specific Fields */}
-          {applierType === 'sme' && (
-            <div className="space-y-4 animate-fade-in">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Company Name</label>
-                <input name="company_name" required className="mt-1 block w-full p-2 border border-gray-300 rounded" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Type of Company</label>
-                  <select name="company_type" className="mt-1 block w-full p-2 border border-gray-300 rounded">
-                    <option>Private Ltd</option>
-                    <option>Sole Proprietor</option>
-                    <option>Partnership</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">NTN No</label>
-                  <input name="ntn_no" required className="mt-1 block w-full p-2 border border-gray-300 rounded" />
-                </div>
-              </div>
-            </div>
-          )}
+        {/* 3. Common Fields */}
+        <input name="contact_person" placeholder="Contact Person Name" required className="w-full p-2 border rounded"/>
+        <input name="contact_number" placeholder="Contact Number" required className="w-full p-2 border rounded"/>
+        <textarea name="address" placeholder="Address" required className="w-full p-2 border rounded"/>
 
-          {/* 3. Retailer Specific Fields */}
-          {applierType === 'retailer' && (
-            <div className="space-y-4 animate-fade-in">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <input name="retailer_name" required className="mt-1 block w-full p-2 border border-gray-300 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">CNIC No</label>
-                <input name="cnic_no" placeholder="00000-0000000-0" required className="mt-1 block w-full p-2 border border-gray-300 rounded" />
-              </div>
-            </div>
-          )}
+        {/* 4. Has Account */}
+        <div className="p-2 border rounded bg-gray-50">
+          <p className="text-sm font-bold">Already Have Account?</p>
+          <label className="mr-4"><input type="radio" name="has_account" value="yes" required/> Yes</label>
+          <label><input type="radio" name="has_account" value="no"/> No</label>
+        </div>
 
-          {/* 4. Shared Fields (Contact Info) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Contact Person</label>
-              <input name="contact_person" required className="mt-1 block w-full p-2 border border-gray-300 rounded" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Contact Number</label>
-              <input name="contact_number" type="tel" required className="mt-1 block w-full p-2 border border-gray-300 rounded" />
-            </div>
-          </div>
+        {/* 5. Loan Type */}
+        <div className="p-2 border rounded bg-gray-50">
+          <p className="text-sm font-bold">Loan Type</p>
+          <label className="block"><input type="radio" name="loan_type" value="car" required/> Car Loan</label>
+          <label className="block"><input type="radio" name="loan_type" value="personal"/> Personal Loan</label>
+          <label className="block"><input type="radio" name="loan_type" value="others"/> Others</label>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Address</label>
-            <textarea name="address" rows="2" required className="mt-1 block w-full p-2 border border-gray-300 rounded"></textarea>
-          </div>
-
-          {/* 5. Account Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Already Have Account?</label>
-            <div className="flex space-x-4">
-              <label className="flex items-center"><input type="radio" name="has_account" value="Yes" className="mr-2" /> Yes</label>
-              <label className="flex items-center"><input type="radio" name="has_account" value="No" defaultChecked className="mr-2" /> No</label>
-            </div>
-          </div>
-
-          {/* 6. Loan Type */}
-          <div className="bg-gray-50 p-4 rounded border">
-            <label className="block text-sm font-bold text-gray-700 mb-2">Loan Type Request:</label>
-            <div className="space-y-2">
-              <label className="flex items-center"><input type="radio" name="loan_type" value="Car Loan" className="mr-2" required /> Car Loan</label>
-              <label className="flex items-center"><input type="radio" name="loan_type" value="Personal Loan" className="mr-2" /> Personal Loan</label>
-              <label className="flex items-center"><input type="radio" name="loan_type" value="Others" className="mr-2" /> Others</label>
-            </div>
-          </div>
-
-          <button type="submit" disabled={status === 'loading'} className="w-full bg-blue-900 text-white font-bold p-3 rounded hover:bg-blue-800 transition">
-            {status === 'loading' ? 'Submitting...' : 'Submit Application'}
-          </button>
-
-        </form>
-      </div>
+        <button disabled={status === 'loading'} className="w-full bg-green-600 text-white p-3 rounded font-bold">
+          {status === 'loading' ? 'Sending...' : 'Submit Application'}
+        </button>
+      </form>
     </div>
   )
 }
