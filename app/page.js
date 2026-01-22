@@ -22,7 +22,10 @@ export default function LoanForm() {
     })
 
     if (res.ok) setStatus('success')
-    else setStatus('error')
+    else {
+      setStatus('error')
+      alert('Submission Failed. Check the VS Code Terminal for details.')
+    }
   }
 
   if (status === 'success') return (
@@ -41,7 +44,7 @@ export default function LoanForm() {
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        
+
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Loan Application</h1>
@@ -49,17 +52,16 @@ export default function LoanForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white shadow-xl rounded-2xl overflow-hidden border border-slate-100">
-          
+
           {/* Section 1: Who are you? */}
           <div className="p-8 border-b border-slate-100 bg-slate-50/50">
             <label className="block text-sm font-semibold text-slate-900 mb-4">I am applying as a:</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* SME Card */}
-              <div 
+              <div
                 onClick={() => setType('sme')}
-                className={`cursor-pointer relative flex items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  type === 'sme' ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-blue-300 bg-white'
-                }`}
+                className={`cursor-pointer relative flex items-center p-4 rounded-xl border-2 transition-all duration-200 ${type === 'sme' ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-blue-300 bg-white'
+                  }`}
               >
                 <div className={`p-2 rounded-lg ${type === 'sme' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                   <Building2 className="w-6 h-6" />
@@ -71,11 +73,10 @@ export default function LoanForm() {
               </div>
 
               {/* Retailer Card */}
-              <div 
+              <div
                 onClick={() => setType('retailer')}
-                className={`cursor-pointer relative flex items-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                  type === 'retailer' ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-blue-300 bg-white'
-                }`}
+                className={`cursor-pointer relative flex items-center p-4 rounded-xl border-2 transition-all duration-200 ${type === 'retailer' ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-blue-300 bg-white'
+                  }`}
               >
                 <div className={`p-2 rounded-lg ${type === 'retailer' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                   <User className="w-6 h-6" />
@@ -89,14 +90,14 @@ export default function LoanForm() {
           </div>
 
           <div className="p-8 space-y-8">
-            
+
             {/* Section 2: Dynamic Details */}
             <div className="animate-in fade-in slide-in-from-top-4 duration-300">
               <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-slate-400" />
                 {type === 'sme' ? 'Company Details' : 'Personal Details'}
               </h3>
-              
+
               <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                 {type === 'sme' ? (
                   <>
@@ -163,7 +164,7 @@ export default function LoanForm() {
               <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-slate-400" /> Loan Preferences
               </h3>
-              
+
               {/* Visual Selection Grid for Loan Type */}
               <label className="block text-sm font-medium text-slate-700 mb-3">Type of Loan</label>
               <div className="grid grid-cols-3 gap-3">
@@ -172,14 +173,13 @@ export default function LoanForm() {
                   { id: 'personal', label: 'Personal', icon: Wallet },
                   { id: 'others', label: 'Others', icon: HelpCircle },
                 ].map((item) => (
-                  <div 
+                  <div
                     key={item.id}
                     onClick={() => setLoanType(item.id)}
-                    className={`cursor-pointer flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
-                      loanType === item.id 
-                        ? 'border-blue-600 bg-blue-50 text-blue-700' 
+                    className={`cursor-pointer flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${loanType === item.id
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : 'border-slate-200 hover:border-blue-300 text-slate-600'
-                    }`}
+                      }`}
                   >
                     <item.icon className={`w-6 h-6 mb-1 ${loanType === item.id ? 'text-blue-600' : 'text-slate-400'}`} />
                     <span className="text-sm font-medium">{item.label}</span>
