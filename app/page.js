@@ -10,24 +10,35 @@ export default function LoanForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setStatus('loading')
-    const formData = new FormData(e.target)
-    const data = Object.fromEntries(formData.entries())
+    
+    try {
+        const formData = new FormData(e.target)
+        const data = Object.fromEntries(formData.entries())
+        const payload = { ...data, applier_type: type, loan_type: loanType }
 
-    // Ensure we send the state values for the buttons that aren't native inputs
-    const payload = { ...data, applier_type: type, loan_type: loanType }
+        const res = await fetch('/api/create-lead', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
 
-    const res = await fetch('/api/create-lead', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+        // 1. Parse the response to get the error message
+        const result = await res.json()
 
-    if (res.ok) setStatus('success')
-    else {
-      setStatus('error')
-      alert('Submission Failed. Check the VS Code Terminal for details.')
+        if (res.ok) {
+          setStatus('success')
+        } else {
+          // 2. IF FAILED: Alert the specific error message
+          setStatus('error')
+          console.error("Server Error Detail:", result)
+          alert(`Submission Failed!\n\nReason: ${result.error || "Unknown Error"}`)
+        }
+    } catch (err) {
+        // 3. IF NETWORK FAILED
+        console.error("Network Error:", err)
+        setStatus('error')
+        alert("Network Error: Is the server running?")
     }
   }
-
   if (status === 'success') return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md w-full">
